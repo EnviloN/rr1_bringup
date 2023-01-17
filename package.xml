@@ -11,6 +11,7 @@
 
   <!-- Execution dependencies -->
   <exec_depend>rr1_description</exec_depend>
+  <exec_depend>rr1_control</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
