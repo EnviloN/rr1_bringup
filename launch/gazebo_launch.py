@@ -1,66 +1,60 @@
 import os
 from launch import LaunchDescription
-from launch_ros.actions import Node
-from launch.actions import ExecuteProcess
+from launch.actions import DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
+from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 
-ROBOT_NAME = "dummy_arm"
-URDF_FILE = f"{ROBOT_NAME}.urdf"
+BRINGUP_PKG = "rr1_bringup"
+DESCRIPTION_PKG = "rr1_description"
+GAZEBO_PKG = "gazebo_ros"
+
+WORLD_FILE = "empty_world.xml"
 
 def generate_launch_description():
-    description_pkg = get_package_share_directory("rr1_description")
-    urdf_path = os.path.join(description_pkg, "urdf", URDF_FILE)
-    controller_path = os.path.join(description_pkg, "config", "controller.yaml")
+    # ------------------------------- Fetch paths ------------------------------
+    # Package share directories
+    bringup_pkg = get_package_share_directory(BRINGUP_PKG)
+    gazebo_pkg = get_package_share_directory(GAZEBO_PKG)
 
-    robot_description = {"robot_description": urdf_path}
+    # Folder with models used in the world description
+    world_models = os.path.join(bringup_pkg, 'worlds', 'models')
+
+    # Description package paths for gazebo configuration
+    description_pkg_prefix = get_package_prefix(DESCRIPTION_PKG)
+    share_folder = os.path.join(description_pkg_prefix, 'share')
+    lib_folder = os.path.join(description_pkg_prefix, 'lib')
+
+    # -------------------------- Configure gazebo paths ------------------------
+    if 'GAZEBO_MODEL_PATH' in os.environ:
+        os.environ['GAZEBO_MODEL_PATH'] =  os.environ['GAZEBO_MODEL_PATH'] + ':' + share_folder + ':' + world_models
+    else:
+        os.environ['GAZEBO_MODEL_PATH'] =  share_folder + ':' + world_models
+
+    if 'GAZEBO_PLUGIN_PATH' in os.environ:
+        os.environ['GAZEBO_PLUGIN_PATH'] = os.environ['GAZEBO_PLUGIN_PATH'] + ':' + lib_folder
+    else:
+        os.environ['GAZEBO_PLUGIN_PATH'] = lib_folder
+
+    print("GAZEBO MODELS PATH: " + str(os.environ["GAZEBO_MODEL_PATH"]))
+    print("GAZEBO PLUGINS PATH: " + str(os.environ["GAZEBO_PLUGIN_PATH"]))
         
-    run_gazebo = ExecuteProcess(
-        cmd=["gazebo", "-s", "libgazebo_ros_factory.so"],
-        output="screen"
+    # --------------------- Include gazebo launch description ------------------
+    launch_gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(gazebo_pkg, 'launch', 'gazebo.launch.py')
+        )
+    )  
+
+    launch_argument = DeclareLaunchArgument(
+        'world',
+        default_value=[os.path.join(bringup_pkg, 'worlds', WORLD_FILE), ''],
+        description='SDF world file'
     )
 
-    spawn_robot = Node(
-                package="gazebo_ros",
-                executable="spawn_entity.py",
-                arguments=["-entity", ROBOT_NAME, "-b", "-file", urdf_path]
-            )
-
-    robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        output="both",
-        arguments=[urdf_path],
-        # parameters=[robot_description]
-    )
-
-    controller_manager = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[robot_description, controller_path],
-        output={
-            "stdout": "screen",
-            "stderr": "screen"
-        }
-    )
-
-    joint_state_broadcaster = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"]
-    )
-
-    joint_trajectory_controller = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_trajectory_controller", "--controller-manager", "/controller_manager"]
-    )
-
-    return LaunchDescription([
-        run_gazebo,
-        spawn_robot,
-        robot_state_publisher,
-        controller_manager,
-        joint_state_broadcaster,
-        joint_trajectory_controller
-    ])
+    return LaunchDescription([            
+            launch_argument,
+            launch_gazebo
+        ])

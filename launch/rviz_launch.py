@@ -15,7 +15,10 @@ DESCRIPTION_PKG = "rr1_description"
 
 def generate_launch_description():
     description_pkg = get_package_share_directory(DESCRIPTION_PKG)
+    bringup_pkg = get_package_share_directory(BRINGUP_PKG)
     urdf_path = os.path.join(description_pkg, "urdf", URDF_FILE)
+
+    robot_description = {"robot_description": Command(['xacro ', urdf_path])}
         
     joint_state_publisher = Node(
         package="joint_state_publisher_gui",
@@ -26,12 +29,10 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[{'robot_description': Command(['xacro ', urdf_path])}]
+        parameters=[robot_description]
     )
 
-    rviz_config = os.path.join(get_package_share_directory(BRINGUP_PKG), 
-                                "rviz", RVIZ_CONFIG_FILE)
-
+    rviz_config = os.path.join(bringup_pkg, "rviz", RVIZ_CONFIG_FILE)
     rviz = Node(
         package="rviz2",
         executable="rviz2",
