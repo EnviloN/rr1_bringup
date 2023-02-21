@@ -19,8 +19,8 @@ ROBOT_BASE_NAME = "base_link"
 CONTROLLER_NAME = "rr1_controller"
 CONTROLLER_FILE = f"{CONTROLLER_NAME}.yaml"
 
-RVIZ_CONFIG_FILE = "urdf_viz.rviz"
-RUN_RVIZ = False
+RVIZ_CONFIG_FILE = "urdf_viz_topic.rviz"
+RUN_RVIZ = True
 
 ROBOT_POSITION = [0.0, 0.0, 0]
 ROBOT_ORIENTATION = [0.0, 0.0, 0.0]
@@ -53,7 +53,8 @@ def generate_launch_description():
         executable="rviz2",
         name="rviz2",
         output="log",
-        arguments=["-d", rviz_config]
+        arguments=["-d", rviz_config],
+        parameters=[{'use_sim_time': True}]
     )
 
     entity_name = ROBOT_NAME + "-" + str(int(random.random()*100000))
@@ -114,7 +115,7 @@ def generate_launch_description():
         forward_position_controller_event,
         joint_trajectory_controller_event,
         robot_state_publisher,
-        spawn_robot,
+        spawn_robot
     ]
     if RUN_RVIZ: nodes.append(rviz)
 
