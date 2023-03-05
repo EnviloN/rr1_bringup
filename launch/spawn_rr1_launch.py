@@ -20,7 +20,7 @@ CONTROLLER_NAME = "rr1_controller"
 CONTROLLER_FILE = f"{CONTROLLER_NAME}.yaml"
 
 RVIZ_CONFIG_FILE = "urdf_viz_topic.rviz"
-RUN_RVIZ = True
+RUN_RVIZ = False
 
 ROBOT_POSITION = [0.0, 0.0, 0]
 ROBOT_ORIENTATION = [0.0, 0.0, 0.0]

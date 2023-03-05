@@ -5,11 +5,9 @@ from launch.substitutions import Command
 
 from ament_index_python.packages import get_package_share_directory
 
-# URDF_FILE = "dummy_arm.urdf"
-# URDF_FILE = "arduinobot.urdf.xacro"
 URDF_FILE = "rr1.urdf.xacro"
 
-RVIZ_CONFIG_FILE = "urdf_viz.rviz"
+RVIZ_CONFIG_FILE = "urdf_viz_file.rviz"
 BRINGUP_PKG = "rr1_bringup"
 DESCRIPTION_PKG = "rr1_description"
 
