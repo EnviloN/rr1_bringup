@@ -1,5 +1,0 @@
-<?xml version='1.0'?>
-<launch>
-    <include file="$(find-pkg-share rr1_bringup)/launch/gazebo_launch.py" />
-    <include file="$(find-pkg-share rr1_bringup)/launch/spawn_rr1_launch.py" />
-</launch>

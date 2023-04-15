@@ -2,9 +2,9 @@ import os
 import random
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import RegisterEventHandler
+from launch.actions import RegisterEventHandler, DeclareLaunchArgument
 from launch.event_handlers import OnProcessExit
-from launch.substitutions import Command
+from launch.substitutions import Command, LaunchConfiguration
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -25,6 +25,7 @@ RUN_RVIZ = False
 ROBOT_POSITION = [0.0, 0.0, 0]
 ROBOT_ORIENTATION = [0.0, 0.0, 0.0]
 
+NAMESPACE = "rr1"
 
 def generate_launch_description():
     # ------------------------------- Fetch paths ------------------------------
@@ -34,16 +35,28 @@ def generate_launch_description():
     urdf_path = os.path.join(description_pkg, "urdf", URDF_FILE)
     xacro_command = Command(['xacro ', urdf_path])
 
-    # The config file is loaded from the URDF
-    # controller_path = os.path.join(description_pkg, "config", CONTROLLER_FILE)
+
+    namespace = LaunchConfiguration('namespace')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+
+    declare_namespace_cmd = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Top-level namespace')
+    
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock if true')
 
     #  --------------------------- Instantiate nodes ---------------------------
     robot_state_publisher = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
+        # namespace=NAMESPACE,
         parameters=[{
-            'use_sim_time': True,
+            'use_sim_time': use_sim_time,
             'robot_description': xacro_command}]
     )
 
@@ -54,7 +67,7 @@ def generate_launch_description():
         name="rviz2",
         output="log",
         arguments=["-d", rviz_config],
-        parameters=[{'use_sim_time': True}]
+        parameters=[{'use_sim_time': use_sim_time}]
     )
 
     entity_name = ROBOT_NAME + "-" + str(int(random.random()*100000))
@@ -79,7 +92,7 @@ def generate_launch_description():
     forward_position_controller = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["--stopped", "forward_position_controller", "--controller-manager", "/controller_manager"]
+        arguments=["--inactive", "forward_position_controller", "--controller-manager", "/controller_manager"]
     )
 
     joint_trajectory_controller = Node(
@@ -111,6 +124,9 @@ def generate_launch_description():
     )
 
     nodes = [
+        declare_namespace_cmd,
+        declare_use_sim_time_cmd,
+        
         joint_state_broadcaster_event,
         forward_position_controller_event,
         joint_trajectory_controller_event,
