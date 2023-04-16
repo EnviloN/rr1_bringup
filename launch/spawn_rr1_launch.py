@@ -33,17 +33,9 @@ def generate_launch_description():
     bringup_pkg = get_package_share_directory(BRINGUP_PKG)
     description_pkg = get_package_share_directory(DESCRIPTION_PKG)
     urdf_path = os.path.join(description_pkg, "urdf", URDF_FILE)
-    xacro_command = Command(['xacro ', urdf_path])
+    xacro_command = Command(['xacro ', urdf_path, " ns:={}".format(NAMESPACE)])
 
-
-    namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
-
-    declare_namespace_cmd = DeclareLaunchArgument(
-        'namespace',
-        default_value='',
-        description='Top-level namespace')
-    
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='true',
@@ -54,7 +46,7 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        # namespace=NAMESPACE,
+        namespace=NAMESPACE,
         parameters=[{
             'use_sim_time': use_sim_time,
             'robot_description': xacro_command}]
@@ -79,26 +71,26 @@ def generate_launch_description():
         arguments=['-entity', entity_name,
             '-x', str(ROBOT_POSITION[0]), '-y', str(ROBOT_POSITION[1]), '-z', str(ROBOT_POSITION[2]),
             '-R', str(ROBOT_ORIENTATION[0]), '-P', str(ROBOT_ORIENTATION[1]), '-Y', str(ROBOT_ORIENTATION[2]),
-            '-topic', '/robot_description'
+            '-topic', '/{}/robot_description'.format(NAMESPACE)
         ]
     )
 
     joint_state_broadcaster = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"]
+        arguments=["joint_state_broadcaster", "--controller-manager", "/{}/controller_manager".format(NAMESPACE)]
     )
 
     forward_position_controller = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["--inactive", "forward_position_controller", "--controller-manager", "/controller_manager"]
+        arguments=["--inactive", "forward_position_controller", "--controller-manager", "/{}/controller_manager".format(NAMESPACE)]
     )
 
     joint_trajectory_controller = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_trajectory_controller", "--controller-manager", "/controller_manager"]
+        arguments=["joint_trajectory_controller", "--controller-manager", "/{}/controller_manager".format(NAMESPACE)]
     )
 
     # Ensure the correct order of starting notes
@@ -124,7 +116,6 @@ def generate_launch_description():
     )
 
     nodes = [
-        declare_namespace_cmd,
         declare_use_sim_time_cmd,
         
         joint_state_broadcaster_event,
